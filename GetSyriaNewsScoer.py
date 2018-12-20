@@ -228,17 +228,18 @@ def monthScore(All_list): # 所有文件打分按月份重新统计,输出已月
 
 def main():
 ##    import numpy as np
-    month_score_list = []
-    fo = open('.\data\Syria cities name.txt','r',encoding = 'ANSI')
-    SyriaCity = str.lower(fo.read())
-    SyriaCity = SyriaCity.split('\n')
-    fo.close()
-##
-    fold_direction = ".\\test_matirial"        #test用数据文件夹
+##    month_score_list = []
+##    fo = open('.\data\Syria cities name.txt','r',encoding = 'ANSI')
+##    SyriaCity = str.lower(fo.read())
+##    SyriaCity = SyriaCity.split('\n')
+##    fo.close()
+####
+##    fold_direction = ".\\test_matirial"        #test用数据文件夹
 ##    fold_direction = "E:\\PY\\NEWS"              #实际工作新闻集
-    ScoreListCollection = getNewsScore(fold_direction,SyriaCity)
-    filename =ScoreListCollection[1] #从新闻读取数据,已读取存入文件,获取文件名
-    print('文章:日期,分数,关键词已写入 {} 文件.'.format(filename))
+##    ScoreListCollection = getNewsScore(fold_direction,SyriaCity)
+##    filename =ScoreListCollection[1] #从新闻读取数据,已读取存入文件,获取文件名
+##    print('文章:日期,分数,关键词已写入 {} 文件.'.format(filename))
+    filename = 'scoreDict.csv'
     ScoreListCollection=CSV_to_List(filename) #从新闻读取数据,已读取存入文件,不需要再使用
     print('按月份统计各项分数,输出到文件.')
     month_score_list = monthScore(ScoreListCollection)
