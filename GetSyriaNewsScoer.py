@@ -8,9 +8,68 @@ from nltk import *
 import time
 import numpy as np
 from nltk_rake_test import rake_text
+from  AutoFileName import Auto_Rename
+from  AutoFileName import CSV_to_List
+##from  AutoFileName import coeffientArry
 ##from nltk.stem import WordNetLemmatizer
 ##from nltk.corpus import treebank
 ##from nltk.tag import StanfordNERTagger
+def saveAsCSV(listToSave,filename,firstLine='Date,Violence_Score,Relief_Score,Enviroment_Score'):
+    filename = Auto_Rename(filename)
+    filename =  filename
+    fo = open(filename,'w+',encoding = 'utf-8')
+##    fo.writelines(firstLine)
+    for item in listToSave:
+        fo.writelines(str(item))
+    fo.close()
+    print('存储到  "{}"  文件.'.format(os.path.join(filename)))
+
+##def CSV_to_List(filename):
+###获取monthscore矩阵
+##    print('读取{}文件数据,转为二位数据列表.'.format(filename))
+##    month_score_list=[]
+##    list1=[]
+##    fo = open(filename,'r',encoding = 'utf-8')
+##    for line in fo:
+##        line = line.split(',')
+##        list1.append(line)
+##    fo.close()
+##    for item in list1[1:]:
+##        numbers = list(map(int, item[1:-1]))
+##        numbers.insert(0,item[0])
+##        month_score_list.append(numbers)
+####    print(month_score_list)
+##    print('读取完毕!')
+##    
+####    filename = Auto_Rename(filename)
+####    fo = open(filename,'w+',encoding = 'utf-8')
+####    for item in month_score_list:
+####        fo.writelines(str(item))
+######    print('Month Scores array:\n' )
+##    fo.close()
+##    return month_score_list
+
+def readKeyWords():
+    import os
+    print("Call readKeyWords() ...\nReading keywords form '\data\' fold")
+    fo = open(".\data\ViolenceWordslist.txt")
+    violence_seed_words = fo.read().split('\n')
+    fo.close()
+    fo =  open(".\data\ReliefWords.txt")
+    rlf_seed_words= fo.read().split('\n')
+    fo.close()
+    fo =  open(".\data\EnviromentWordslist.txt")
+    enTh_seed_words= fo.read().split('\n')
+    fo.close()
+    fo =  open(".\data\ReliefWords1.txt")
+    relief_words_1= fo.read().split('\n')
+    fo.close()
+    fo =  open(".\data\ReliefWords2.txt")
+    relief_words_2= fo.read().split('\n')
+    fo.close()
+    return violence_seed_words,rlf_seed_words,enTh_seed_words,relief_words_1,relief_words_2
+    print("readKeyWords() Finished...")
+#dict_format Mar 月份 转换成数字月份 03
 def dict_format(time_string):
     t1 = time.strptime(time_string,'%d %b %Y')
 ##    print(t1)
@@ -18,79 +77,56 @@ def dict_format(time_string):
 ##    print(time_string)
     return time_string
 #给叙利亚新闻打分
-
 def process_bar(done,allJobs,bar_longth=20,prcessign_duration=0):
-    a =round(done/allJobs)*bar_longth
-    a_str = '*'* a
+    a =round((done/allJobs)*bar_longth)
+    a_str = '>'* a
     b = '-' * (bar_longth-a)
     c = (done/allJobs)*100
     H = round(prcessign_duration//3600)
     M = round((prcessign_duration%1600)//60)
     S = round(prcessign_duration %60)
-    time_str = str(H) + 'H : ' +str(M) + 'M : ' +str(S) + 'S'
-    print( 'Processing {0:>3.0f}%  [{1}->{2}] {4:>6} files for: {3}'.format(c,a_str,b,time_str,done))
+    time_str = str(H) + 'H : ' +str(M) + 'm : ' +str(S) + 's'
+    print( 'Processing {0:>3.0f}%  [{1}>{2}] {4:>6} files for: {3}'.format(c,a_str,b,time_str,done))
 
 def getNewsScore(fold_direction,SyriaCity):
 ##    start_time = time.perf_counter()
     print ('Call newsScoe() start......')
-    violence_seed_words =[ 'violence', 'conflict', 'fight','fighter','kill','battle', 'massacre','butchery','injury', 'bombing',\
-                           'explosion', 'corpse', 'abduction', 'ambush', 'suicide', 'rape', 'persecution','assassination', 'terror',\
-                           'military', 'attack','mortar','forc',]
-    rlf_seed_words = ['relief', 'disaster', 'emergency situation', 'refugee camp', 'tent', 'aid', 'host community',\
-                      'outbreak', 'infectious diseases', 'epidemic', 'disease', 'contagious', 'infection', 'donor',\
-                      'vaccination', 'campaign', 'reconstruction', 'supplies', 'medical', 'grant']
-    enTh_seed_words = ['natural resources', 'food scarcity', 'food shortage', 'drought, flood',\
-                       'environmental degradation', 'countrysid', 'rural', 'agriculture', 'farmer', 'temperature',\
-                       'crop production', 'climate chang']
-    relief_words_2 = ['effort', 'relief', 'humanitarian', 'emergency', 'organization','infectious diseases', 'agency', 'aid','emergency situation', 'refugee camp', 'donor', 'campaign', 'charity', 'assist','voluntary', 'motivation', 'rebuild', 'establish', 'UNICEF', 'NGO','UN'] 
-    relief_words_1 = ['host community','epidemic', 'vaccination', 'nutrition', 'supplies', 'protect', 'shelter', 'cloth', 'food', 'money', 'water']
-    
-    firstLine = 'Date,Violence_Score,Relief_Score,Enviroment_Score,Key_words\n'
-
-    st = nltk.stem.SnowballStemmer('english')
-    items = []
     ScoreListCollection = []
     sub_list =[]
     All_list = []
+    N_all_files,N =0,0
+
+    keywordslist = readKeyWords()
+    violence_seed_words =keywordslist[0]
+    rlf_seed_words=keywordslist[1]
+    enTh_seed_words=keywordslist[2]
+    relief_words_1=keywordslist[3]
+    relief_words_2=keywordslist[4]
+##    print(violence_seed_words)
+    firstLine = 'Date,Violence_Score,Relief_Score,Enviroment_Score,Key_words\n'
+    st = nltk.stem.SnowballStemmer('english')
     stop_words = set(stopwords.words('english'))
-    
-##    dir="E:\\PY\\NEWS"  #新闻存放文件夹地址
-##    print(SyriaCity[:5])
-    
-##    print(st.stem(' '.join(violence_seed_words)))
-##    print(st.stem(' '.join(rlf_seed_words)))
-##    print(st.stem(' '.join(enTh_seed_words)))
-    
 ##    print( '\nThere is {} stop words in this collection.' .format(len(stop_words)))
-    
-    #待筛选文件地址读取
-##    fo = open( 'SyriaNewsNameList.txt', 'r', encoding = 'ANSI')
-##    file_dir = fo.read()
-##    file_dir = file_dir.split('\n')
-##    fo.close()
     fo = open('scoreDict.csv','w+',encoding = 'UTF-8')
     fo.writelines(firstLine)
     fo.close()
-    N_all_files,N =0,0
-    
+#遍历文件夹内文件,删选目标区域文件,根据关键词打分
     for root,dirs,files in os.walk(fold_direction):
         files_sum = len(files)
         print('{} files need to be processed...'.format(files_sum))
-        for file in files[:]:
+        for file in files:
             N_all_files +=1
             file = os.path.join(root,file)
-            
+
             filtered_words =[]
             key_words =[]
-            violence_score = 0
-            relief_score = 0
-            enviro_score = 0
+            violence_score, relief_score, enviro_score, = 0,0,0
             ScoreDict = {'date':"",'violence_score':"",'relief_score':"",'enviro_score':"", 'key_words':""}
             start_time = time.perf_counter()
-            
+
             xmlRead = readXML (file)
             date = xmlRead[0]
-##            print(date)
+            # print(date)
             date = dict_format(date)
             txt= xmlRead[3]
             extracted_phrases = rake_text(txt,2,2)
@@ -103,17 +139,17 @@ def getNewsScore(fold_direction,SyriaCity):
 ##            print(filtered_words[:9])
             tagged_words = nltk.pos_tag(filtered_words)
 ##            print(tagged_words[:9])
-            regex = 'NN.*|V.*|RB'        
+            regex = 'NN.*|V.*|RB.*'
             filterTagged_words = [w for w in tagged_words if re.search(regex,w[1])]
             filterTagged_words2 = []
             for item in filterTagged_words:
                 filterTagged_words2.append(item[0])
             filterTagged_words = []
-            filterTagged_words = filterTagged_words2 + extracted_phrases
+            filterTagged_words = filterTagged_words2 + extracted_phrases #合并文章提取的关键词和关键词组
 ##            print(filterTagged_words)
             if SyriaNewsOrNot(SyriaCity,filtered_words):
                 N +=1
-                for item in filterTagged_words:                    
+                for item in filterTagged_words:
                     if item in violence_seed_words:
                         violence_score +=1
                         key_words.append(item)
@@ -131,36 +167,35 @@ def getNewsScore(fold_direction,SyriaCity):
                         key_words.append(item)
 ##                        print(item)
                     Score_sum = violence_score + relief_score + enviro_score
-                        
+
 ##                ScoreDict['date'],ScoreDict['violence_score'],ScoreDict['relief_score'],ScoreDict['enviro_score'],ScoreDict['Score_Sum'],ScoreDict['key_words_list'] =\
 ##                                                                                                                                                date,violence_score,relief_score,enviro_score,Score_sum,key_words
                 sub_list =[date,violence_score,relief_score,enviro_score,Score_sum,str(' '.join(key_words))]
                 All_list.append(sub_list)
 ##                ScoreListCollection.append(ScoreDict)
-##                print('File No. :==={0}/{2}===, File direction&name : {1}  ' .format( str(N),str(file),str(N_all_files)))
+                # print('File No. :==={0}/{2}===, File direction&name : {1}  ' .format( str(N),str(file),str(N_all_files)))
 ##                print("{0:=^20},{1:>5},{2:>5},{3:>5},{4:>5}".format(date,violence_score,relief_score,enviro_score,Score_sum))
 
                 ScoreListString = date+","+str(violence_score)+","+str(relief_score)+","+str(enviro_score)+","+' '.join(key_words)+'\n'
                 fo = open('scoreDict.csv','a+',encoding = 'UTF-8')
-                fo.writelines(ScoreListString) #输出一个文本文件,暂不使用                
-##            else:
-##                print('********Not Syria Related News*********')
+                fo.writelines(ScoreListString) #输出一个文本文件,下一步处理使用
+            # else:
+                # print('********Not Syria Related News*********')
 ##                print('File No. :==={0}/{2}===, File direction&name : {1}  ' .format( str(N),str(file),str(N_all_files)))
-            if N_all_files ==1 or N_all_files%100 ==0:
+            if N_all_files ==1 or N_all_files%1==0:
                 dur = time.perf_counter() - process_strat
-                process_bar(N_all_files,files_sum,20,dur)           
+                process_bar(N_all_files,files_sum,20,dur)
 ##            cycle_time = time.perf_counter()-start_time
 ##            print('此文件处理时间:{0:.2f}秒\n' .format(cycle_time ))
-            
+
 ##            fodict = open('ScoreListCollection.txt','w+',encoding = 'UTF-8')
 ##            fodict.write(str(ScoreListCollection))#输出一个字典文件,后续使用
 ##            fodict.close()
-    fo.close()    
+    fo.close()
 ##    print(ScireListCollection)
     print('Scoring Finished!')
-##    print(All_list)
+##    print(All_list[:4])
     return All_list
-
 # 提取xml文件中的内容,返回tuple
 def readXML(filename):
     import xml.etree.ElementTree as ET
@@ -183,16 +218,17 @@ def readXML(filename):
         timeStr = root.find("PublicationDateTime").text[:-9]
         content = str(root.find("Content").text)
         phrases = rake_text(content)
-        content = word_tokenize(content)       
+        content = word_tokenize(content)
+        fo.close()
 ##        print (phrases)
 ##    except:
 ##        print('Error,Not correct content!')
     finally:
         return timeStr, sourceName, title, content, phrases
-    
+
 #验证新闻是不是关于目标地区的新闻,返回True / Flase #参数SyriaCity = 目标地区城市列表'\n'分割的字符串文件, txt = 需要验证的新闻字符串
 def SyriaNewsOrNot(SyriaCity,txt):
-    for city in SyriaCity:  
+    for city in SyriaCity:
         for words in txt:
             if words == city:
                 return True
@@ -209,60 +245,46 @@ def monthScore(All_list): # 所有文件打分按月份重新统计,输出已月
     month_score_list= []
     sub_list = []
     month_score_v , month_score_r ,  month_score_e, month_score_s = 0, 0, 0, 0
-    
-##    file_dir = 'E:\PY\ScoreListCollection.txt'
-##    scoreDict =eval( open(file_dir,'r',encoding = 'UTF-8').read())
-##    date = scoreDict[0]['date']
-##    news_score = int(scoreDict[0]['Score_Sum'])
-    
+
     for item in All_list:
-        month_list.append(item[0][:7])    
+        month_list.append(item[0][:7])
     month_list = list(set(month_list))
 ##    print(month_list)
-    
     for month in month_list:
         for item in All_list:
             if item[0][:7] == month:
                 month_score_v += item[1]
                 month_score_r +=  item[2]
                 month_score_e +=  item[3]
-                month_score_s+=  item[4]
-        sub_list = [month,month_score_v,month_score_r,month_score_e, month_score_s]                 
+                month_score_s =  month_score_v + month_score_r + month_score_e
+        sub_list = [month,month_score_v,month_score_r,month_score_e, month_score_s]
         month_score_list.append(sub_list)
         month_score_v , month_score_r ,  month_score_e, month_score_s = 0, 0, 0, 0
+    month_score_list = sorted(month_score_list,key = lambda x: float(eval(x[0]))) #按月份先后排序
 ##    print(month_score_list[:20])
     print ('Months Scoe() Finished!')
     return month_score_list
 
 def main():
     import numpy as np
-    np.arr = []
-    month_score_list = []
-    fo = open('.\data\Syria cities name.txt','r',encoding = 'ANSI')
-    SyriaCity = str.lower(fo.read())
-    SyriaCity = SyriaCity.split('\n')
-    fo.close()
-
-    fold_direction = "E:\\PY\\test_matirial" 
-    ScoreListCollection = getNewsScore(fold_direction,SyriaCity)
+##    month_score_list = []
+##    fo = open('.\data\Syria cities name.txt','r',encoding = 'ANSI')
+##    SyriaCity = str.lower(fo.read())
+##    SyriaCity = SyriaCity.split('\n')
+##    fo.close()
+##
+##    # fold_direction = "E:\\PY\\test_matirial"#test用数据文件夹
+##    fold_direction = "E:\\PY\\NEWS" #实际工作新闻集
+##    ScoreListCollection = getNewsScore(fold_direction,SyriaCity) #从新闻读取数据,已读取存入文件,不需要再使用
+    print('文章日期,分数,关键词已写入"scoreDict.csv"文件.')
+    ScoreListCollection=CSV_to_List('scoreDict.csv')
     month_score_list = monthScore(ScoreListCollection)
+    print(month_score_list[:2])
+    saveAsCSV(month_score_list,'coeffient_arry.csv')
 
-    month_score_list = sorted(month_score_list,key = lambda x: float(eval(x[0]))) #按月份先后排序
-##    print(month_score_list)
-
-#获取monthscore矩阵
-    fo = open('coeffient_arry.txt','w+',encoding = 'utf-8')
-    for item in month_score_list:
-        np.arr.append(item[1:5])
-        fo.writelines(str(item[1:5]))
-    print('Month Scores array:\n' )
-    fo.close()
-    print(np.arr)
 
 global process_strat
 process_strat = time.perf_counter()
 main()
 processing_time =  time.perf_counter() - process_strat
 print('Total running time is {0:=^10.2f} senconds.'.format(processing_time))
-
-

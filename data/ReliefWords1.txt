@@ -1,0 +1,11 @@
+host community
+epidemic
+vaccination
+nutrition
+supplies
+protect
+shelter
+cloth
+food
+money
+water
