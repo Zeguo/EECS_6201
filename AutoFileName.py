@@ -15,7 +15,7 @@ def Auto_Rename(filename,fold_direction= ".\output\\\\"):
 # dataFileName = Auto_Rename('scoreDict.csv')
 
 def CSV_to_List(filename):
-#获取monthscore矩阵
+#获取monthscore矩阵,读取CSV 文件,转换成列表形式
     print('读取{}文件数据,转为二位数据列表.'.format(filename))
     month_score_list=[]
     list1=[]
@@ -33,3 +33,15 @@ def CSV_to_List(filename):
     fo.close()
     return month_score_list
 ##CSV_to_List('new 2.txt')
+
+def process_bar(done,allJobs,bar_longth=20,prcessign_duration=0):
+    #文件处理进度条显示
+    a =round((done/allJobs)*bar_longth)
+    a_str = '>'* a
+    b = '_' * (bar_longth-a)
+    c = (done/allJobs)*100
+    H = round(prcessign_duration//3600)
+    M = round((prcessign_duration%1600)//60)
+    S = round(prcessign_duration %60)
+    time_str = str(H) + 'H : ' +str(M) + 'm : ' +str(S) + 's'
+    print( 'Processing {0:>3.0f}%  [{1}>{2}] {4:>6} files for: {3}'.format(c,a_str,b,time_str,done))
